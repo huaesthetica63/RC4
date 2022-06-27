@@ -8,16 +8,16 @@ bool RC4Cipher(char*filename1,char*filename2,char*key){//RC4 - поточный 
     if((!file.is_open())||(!cipherfile.is_open())||(!keyfile.is_open()))
         return false;
     long long keyLenght = getSizeFile(key);//узнаем размер исходного файла
-    vector<short>s(256);//s-блок, который помогает шифровать исходные данные
+    vector<unsigned char>s(256);//s-блок, который помогает шифровать исходные данные
     //инициализация s-блока
     for(int i=0; i<256;i++){
         s[i]=i;
     }
     int i, j=0;
-    vector<short>keyarr(256);//массив с байтами ключа для удобства
-    short keybyte;//очередной байт из ключевого файла
+    vector<unsigned char>keyarr(256);//массив с байтами ключа для удобства
+    char keybyte;//очередной байт из ключевого файла
     int ind=0;
-    while(keyfile.read((char *)&keybyte,sizeof(short))&&ind<256){
+    while(keyfile.read(&keybyte,sizeof(char))&&ind<256){
         keyarr[ind++]=keybyte;//переносим байты из ключевого файла в массив
     }
     for(i=0;i<256;i++)//"тасовка" s-блока как часть его дальнейшей инициализации
@@ -27,15 +27,15 @@ bool RC4Cipher(char*filename1,char*filename2,char*key){//RC4 - поточный 
     }
     i=j=0;
     //вторая часть алгоритма связана непосредственно с кодированием, на каждый байт текста генерируем псведослучайное слово (байт)
-    short byte;
-    while(file.read((char *)&byte,sizeof(short))){
+    char byte;
+    while(file.read(&byte,sizeof(char))){
         i = ( i + 1 ) % 256;//делим индексы на длину s-блока, чтобы не выходить за пределы массива
         j = ( j + s[i] ) % 256;
         swap(s[i],s[j]);//меняем местами (тасуем) элементы s-блока
-        short t = ( s[i] + s[j] ) % 256;//получаем по алгоритму rc4 номер байта в s-блоке - псевдослучайное слово для кодировки текущего байта
-        short k = s[t];
-        short resbyte = (byte^k);//xor'им байт текста и взятый из s-блока байт
-        cipherfile.write((char *)&resbyte, sizeof(short));//записываем результат в шифротекст
+        unsigned char t = ( s[i] + s[j] ) % 256;//получаем по алгоритму rc4 номер байта в s-блоке - псевдослучайное слово для кодировки текущего байта
+        unsigned char k = s[t];
+        char resbyte = (byte^k);//xor'им байт текста и взятый из s-блока байт
+        cipherfile.write(&resbyte, sizeof(char));//записываем результат в шифротекст
     }//на очередную итерацию массива проделываем тасовку s-блока снова, таким образом, уменьшаем возможность найти закономерности для криптоаналитика
     file.close();
     cipherfile.close();
@@ -52,8 +52,8 @@ long long getSizeFile(char*filename){//функция для выяснения 
 }
 void printBinaryFile(char*filename){//печать бинарного файла в виде последовательности битов
     ifstream file(filename, ios::binary);
-    short byte;
-    while(file.read((char *)&byte,sizeof(short))){
+    char byte;
+    while(file.read(&byte,sizeof(char))){
         cout<<bitset<8>(byte)<<" ";
     }
     file.close();
@@ -61,8 +61,8 @@ void printBinaryFile(char*filename){//печать бинарного файла
 void generateKey(char*filename, long long size){//генерация случайного набора байт ключа заданной длины
     ofstream keyfile(filename,ios::binary|ios::out);
     while(size>0){
-        short byte = rand()%256;
-        keyfile.write((char *)&byte, sizeof(short));
+        char byte = rand()%256;
+        keyfile.write(&byte, sizeof(char));
         size--;
     }
     keyfile.close();
